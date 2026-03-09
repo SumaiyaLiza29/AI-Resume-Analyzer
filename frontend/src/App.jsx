@@ -3,7 +3,7 @@ import axios from "axios";
 import UploadZone from "./components/UploadZone";
 import ResultsPanel from "./components/ResultsPanel";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ai-resume-analyzer-vzzy.onrender.com/api/analyze";
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -28,7 +28,7 @@ export default function App() {
       setResult(res.data.data);
     } catch (err) {
       setError(
-        err.response?.data?.error || "কিছু একটা সমস্যা হয়েছে। আবার try করো।"
+        err.response?.data?.error || "Something Wrong..!!!!!।"
       );
     } finally {
       setLoading(false);
