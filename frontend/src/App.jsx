@@ -251,7 +251,7 @@ export default function App() {
                         <div className="absolute inset-0 w-5 h-5 border-2 border-cyan-400/20 border-b-cyan-400 rounded-full animate-spin-slow"></div>
                       </div>
                       <span className="text-emerald-400 font-semibold">
-                        Gemini AI is analyzing your resume...
+                        GROQ AI is analyzing your resume...
                       </span>
                     </div>
                   </div>
