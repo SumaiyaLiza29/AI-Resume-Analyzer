@@ -238,7 +238,7 @@ export default function App() {
 
                     {/* Hint text */}
                     <p className="text-center text-xs text-slate-500 mt-3 animate-pulse">
-                      ✨ Gemini AI will analyze your resume (takes ~30 seconds)
+                      ✨ Groq will analyze your resume 
                     </p>
                   </div>
                 )}
@@ -309,7 +309,7 @@ export default function App() {
                   { 
                     icon: "⚡", 
                     title: "Instant & Free", 
-                    desc: "Powered by Google Gemini — completely free to use",
+                    desc: "Powered by GROQ — completely free to use",
                     gradient: "from-amber-400/20 to-amber-400/5",
                     border: "hover:border-amber-500/50"
                   },
@@ -378,7 +378,7 @@ export default function App() {
         <footer className="relative border-t border-white/5 bg-black/20 backdrop-blur-sm mt-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <p className="text-center text-xs text-slate-600">
-              © 2024 ResumeAI • Powered by Google Gemini • 100% Free • No signup required
+              © 2026 ResumeAI • Powered by GROQ • 100% Free • No signup required
             </p>
           </div>
         </footer>
