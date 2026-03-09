@@ -12,9 +12,9 @@ dotenv.config({ path: join(__dirname, ".env") });
 
 const app = express();
 
-// CORS সমাধান: সব লোকালহোস্ট পোর্ট অ্যালাউ করা হয়েছে
+
 app.use(cors({ 
-  origin: true, // এটি রিকোয়েস্টের অরিজিন অটোমেটিক ডিটেক্ট করে অ্যালাউ করবে
+  origin: true, 
   credentials: true 
 }));
 

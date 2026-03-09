@@ -3,7 +3,7 @@ import axios from "axios";
 import UploadZone from "./components/UploadZone";
 import ResultsPanel from "./components/ResultsPanel";
 
-const API_URL = "https://ai-resume-analyzer-vzzy.onrender.com/api/analyze";
+const API_URL = "https://ai-resume-analyzer-vzzy.onrender.com/api";
 
 export default function App() {
   const [file, setFile] = useState(null);
