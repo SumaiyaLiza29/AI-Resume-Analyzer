@@ -12,7 +12,12 @@ dotenv.config({ path: join(__dirname, ".env") });
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+// CORS সমাধান: সব লোকালহোস্ট পোর্ট অ্যালাউ করা হয়েছে
+app.use(cors({ 
+  origin: true, // এটি রিকোয়েস্টের অরিজিন অটোমেটিক ডিটেক্ট করে অ্যালাউ করবে
+  credentials: true 
+}));
+
 app.use(express.json());
 app.use("/api", analyzeRouter);
 
