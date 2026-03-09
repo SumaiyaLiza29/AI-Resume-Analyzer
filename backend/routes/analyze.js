@@ -1,78 +1,68 @@
-// analyze.js
 import express from "express";
 import multer from "multer";
-import cors from "cors";
 import mammoth from "mammoth";
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import pdfParse from "pdf-parse"; // ✅ New PDF parser
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Load environment variables
 dotenv.config({ path: join(__dirname, "../../.env") });
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// CORS setup
-router.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-// ---------------------------
-// Extract text from PDF/DOCX
-// ---------------------------
 async function extractText(file) {
   const { mimetype, buffer, originalname } = file;
 
-  // PDF
   if (mimetype === "application/pdf" || originalname.toLowerCase().endsWith(".pdf")) {
-    try {
-      const data = await pdfParse(buffer);
-      const text = data.text.trim();
-      if (!text) throw new Error("PDF text extraction returned empty");
-      return text;
-    } catch (err) {
-      console.error("❌ PDF parse failed:", err.message);
-      throw new Error("Failed to extract text from PDF. Make sure it's not a scanned image PDF.");
-    }
+    const PDFParser = (await import("pdf2json")).default;
+
+    return new Promise((resolve, reject) => {
+      const pdfParser = new PDFParser();
+
+      pdfParser.on("pdfParser_dataReady", (pdfData) => {
+        try {
+          const text = pdfData.Pages
+            .map(page =>
+              page.Texts
+                .map(t => {
+                  try {
+                    return decodeURIComponent(t.R.map(r => r.T).join(""));
+                  } catch {
+                    // ✅ decode fail হলে raw text নাও
+                    return t.R.map(r => r.T).join("");
+                  }
+                })
+                .join(" ")
+            )
+            .join("\n");
+          resolve(text.trim());
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      pdfParser.on("pdfParser_dataError", reject);
+      pdfParser.parseBuffer(buffer);
+    });
   }
 
-  // DOCX
   if (
     mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
     originalname.toLowerCase().endsWith(".docx")
   ) {
-    try {
-      const result = await mammoth.extractRawText({ buffer });
-      const text = result.value.trim();
-      if (!text) throw new Error("DOCX text extraction returned empty");
-      return text;
-    } catch (err) {
-      console.error("❌ DOCX parse failed:", err.message);
-      throw new Error("Failed to extract text from DOCX file.");
-    }
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value.trim();
   }
 
-  // Fallback: plain text
-  const text = buffer.toString("utf-8").trim();
-  if (!text) throw new Error("File has no readable text content");
-  return text;
+  return buffer.toString("utf-8").trim();
 }
 
-// ---------------------------
-// Analyze text with Groq AI
-// ---------------------------
 async function analyzeWithGroq(text) {
-  if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY missing");
-
+  // Spaced text clean করো (S U M A I Y A → SUMAIYA)
   const cleanText = text
     .replace(/([A-Za-z])\s(?=[A-Za-z]\s)/g, "$1")
     .replace(/\s{3,}/g, " ")
@@ -85,6 +75,7 @@ RULES:
 - If this is NOT a resume (cover letter, certificate etc) → return: {"error":"not_a_resume","message":"This is not a resume. Please upload a Resume/CV."}
 - Score MUST vary based on actual quality: Poor=30-50, Average=51-70, Good=71-85, Excellent=86-100
 - NEVER return the same score for different resumes
+- Be brutally honest
 
 Resume Content:
 """
@@ -95,11 +86,11 @@ Deduct score for: missing contact info, no quantified achievements, weak formatt
 
 Return ONLY raw JSON (no markdown, no explanation):
 {
-  "atsScore": <unique realistic number>,
+  "atsScore": <unique realistic number based on THIS specific resume>,
   "overallRating": "<Excellent|Good|Average|Poor>",
-  "summary": "<2-3 brutally honest sentences>",
-  "strengths": ["<strength1>","<strength2>","<strength3>"],
-  "skillsFound": ["<skill1>","<skill2>","<skill3>","<skill4>","<skill5>"],
+  "summary": "<2-3 brutally honest sentences specific to this resume>",
+  "strengths": ["<real strength from this resume>","<strength>","<strength>"],
+  "skillsFound": ["<actual skill in resume>","<skill>","<skill>","<skill>","<skill>"],
   "skillGaps": [
     {"skill":"<missing skill>","importance":"<High|Medium|Low>","reason":"<why>"},
     {"skill":"<missing skill>","importance":"<High|Medium|Low>","reason":"<why>"},
@@ -117,53 +108,57 @@ Return ONLY raw JSON (no markdown, no explanation):
     "readability":<0-100>,
     "completeness":<0-100>
   },
-  "jobRoles": ["<role1>","<role2>","<role3>"]
+  "jobRoles": ["<specific role for this resume>","<role>","<role>"]
 }`;
 
-  try {
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 1.0,
-      max_tokens: 2000,
-    });
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 1.2,
+    max_tokens: 2000,
+  });
 
-    const raw = completion.choices[0].message.content;
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid AI response: Not a valid JSON");
+  const raw = completion.choices[0].message.content;
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Invalid AI response");
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (parsed.error === "not_a_resume") throw new Error(parsed.message);
+  const parsed = JSON.parse(jsonMatch[0]);
+  if (parsed.error === "not_a_resume") throw new Error(parsed.message);
 
-    return parsed;
-  } catch (err) {
-    console.error("❌ Groq analysis failed:", err.message);
-    throw new Error("AI analysis failed: " + err.message);
-  }
+  return parsed;
 }
 
-// ---------------------------
-// Route: POST /analyze
-// ---------------------------
 router.post("/analyze", upload.single("resume"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-
   try {
-    console.log("📂 Received file:", req.file.originalname);
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: "No file uploaded." });
+    }
+
+    console.log(`📄 Analyzing: ${req.file.originalname}`);
 
     const text = await extractText(req.file);
-    console.log("📝 Extracted text length:", text.length);
+    console.log(`📝 Preview: ${text.slice(0, 200)}`);
 
-    if (!text || text.length < 100) throw new Error("Invalid resume content");
+    if (!text || text.length < 100) {
+      return res.status(400).json({
+        success: false,
+        error: "Could not extract text. Please upload a valid PDF or DOCX resume.",
+      });
+    }
+
+    console.log(`✅ Extracted: ${text.length} chars`);
 
     const analysis = await analyzeWithGroq(text);
-    console.log("✅ Analysis complete for:", req.file.originalname);
+    console.log(`🎯 ATS Score: ${analysis.atsScore}`);
 
     res.json({ success: true, filename: req.file.originalname, data: analysis });
 
   } catch (err) {
-    console.error("❌ Error analyzing resume:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Error:", err.message);
+    if (err.message.includes("429")) {
+      return res.status(429).json({ success: false, error: "Rate limit. Try again in 1 minute." });
+    }
+    res.status(500).json({ success: false, error: "Analysis failed: " + err.message });
   }
 });
 

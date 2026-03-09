@@ -1,35 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import UploadZone from "./components/UploadZone";
 import ResultsPanel from "./components/ResultsPanel";
 
-const API_URL = "https://ai-resume-analyzer-vzzy.onrender.com/api";
+const API_URL = "http://localhost:5000/api";
 
 export default function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
+
+  const handleFile = (f) => { setFile(f); setResult(null); setError(null); };
 
   const handleAnalyze = async () => {
     if (!file) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
+    setLoading(true); setError(null); setResult(null);
     try {
       const formData = new FormData();
       formData.append("resume", file);
-
       const res = await axios.post(`${API_URL}/analyze`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       setResult(res.data.data);
     } catch (err) {
-      setError(
-        err.response?.data?.error || "Something Wrong..!!!!!।"
-      );
+      setError(err.response?.data?.error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -37,350 +35,185 @@ export default function App() {
 
   return (
     <>
-      {/* Add animations in style tag */}
-      <style jsx>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        :root{
+          --bg:#07080f;--surface:#0c0d17;--s2:#10111c;--border:rgba(255,255,255,0.055);
+          --bhi:rgba(255,255,255,0.11);--gold:#d4a84b;--gold2:#f0cc7a;
+          --teal:#34d4be;--purple:#9f85f7;
+          --text:#edecea;--muted:#555568;--dim:#2e2e3e;
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-          20%, 40%, 60%, 80% { transform: translateX(2px); }
-        }
-        @keyframes spin-slow {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(2deg); }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        .animate-slideUp {
-          animation: slideUp 0.6s ease-out forwards;
-          opacity: 0;
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out forwards;
-          opacity: 0;
-        }
-        .animate-scaleIn {
-          animation: scaleIn 0.5s ease-out forwards;
-        }
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-        .animate-spin-slow {
-          animation: spin-slow 3s linear infinite;
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        .animate-pulse-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
-        .delay-500 { animation-delay: 500ms; }
-        .delay-700 { animation-delay: 700ms; }
-        .delay-1000 { animation-delay: 1000ms; }
+        html{scroll-behavior:smooth;}
+        body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+        body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.45;}
+        .wrap{position:relative;z-index:1;}
+        .glow{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+        .g1{width:700px;height:700px;top:-250px;right:-250px;background:radial-gradient(circle,rgba(212,168,75,0.06) 0%,transparent 70%);}
+        .g2{width:550px;height:550px;bottom:0;left:-200px;background:radial-gradient(circle,rgba(52,212,190,0.05) 0%,transparent 70%);}
+
+        .hdr{position:sticky;top:0;z-index:100;height:70px;border-bottom:1px solid var(--border);backdrop-filter:blur(24px) saturate(1.4);background:rgba(7,8,15,0.78);display:flex;align-items:center;padding:0 48px;justify-content:space-between;}
+        .logo{display:flex;align-items:center;gap:13px;}
+        .logo-badge{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--gold),#7a5010);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 20px rgba(212,168,75,0.22);}
+        .logo-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;letter-spacing:-0.5px;color:var(--text);}
+        .logo-name em{font-style:normal;color:var(--gold);}
+        .logo-tag{font-size:9.5px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:1px;}
+        .nav{display:flex;gap:6px;}
+        .npill{padding:5px 15px;border-radius:999px;font-size:11.5px;font-weight:500;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:default;transition:all 0.25s;}
+        .npill:hover{border-color:var(--bhi);color:var(--text);background:rgba(255,255,255,0.03);}
+
+        .main{max-width:1060px;margin:0 auto;padding:88px 24px 120px;}
+
+        .hero{text-align:center;margin-bottom:76px;opacity:0;transform:translateY(28px);transition:opacity 0.9s cubic-bezier(.16,1,.3,1),transform 0.9s cubic-bezier(.16,1,.3,1);}
+        .hero.in{opacity:1;transform:translateY(0);}
+        .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:999px;margin-bottom:32px;border:1px solid rgba(212,168,75,0.22);background:rgba(212,168,75,0.08);font-size:10.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+        .eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:ebpulse 2.2s ease-in-out infinite;}
+        @keyframes ebpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+        .h-title{font-family:'Cormorant Garamond',serif;font-size:clamp(50px,6.5vw,86px);font-weight:700;line-height:1.05;letter-spacing:-2.5px;margin-bottom:8px;color:var(--text);}
+        .h-title .gw{background:linear-gradient(120deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .h-title .fw{color:rgba(237,236,234,0.26);}
+        .h-sub{font-size:17px;color:var(--muted);font-weight:300;line-height:1.78;max-width:480px;margin:22px auto 44px;letter-spacing:0.1px;}
+        .h-sub strong{color:rgba(237,236,234,0.65);font-weight:500;}
+        .stats{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden;}
+        .stat{padding:14px 28px;text-align:center;border-right:1px solid var(--border);}
+        .stat:last-child{border-right:none;}
+        .stat-n{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--gold);line-height:1;}
+        .stat-l{font-size:10.5px;color:var(--muted);letter-spacing:0.5px;margin-top:4px;}
+
+        .ucard-wrap{max-width:570px;margin:0 auto 88px;opacity:0;transform:translateY(20px);transition:opacity 0.9s cubic-bezier(.16,1,.3,1) 0.15s,transform 0.9s cubic-bezier(.16,1,.3,1) 0.15s;}
+        .ucard-wrap.in{opacity:1;transform:translateY(0);}
+        .ucard{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:32px;position:relative;overflow:hidden;}
+        .ucard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,75,0.28),transparent);}
+        .abtn{width:100%;margin-top:16px;padding:17px 24px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--gold) 0%,#9a6a0a 55%,var(--gold) 100%);background-size:200% 100%;background-position:0% 0%;color:#1a0f00;font-family:'Outfit',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:0.4px;cursor:pointer;transition:background-position 0.5s,transform 0.2s,box-shadow 0.3s;}
+        .abtn:hover{background-position:100% 0%;transform:translateY(-2px);box-shadow:0 14px 42px rgba(212,168,75,0.28);}
+        .abtn:active{transform:translateY(0);}
+        .loading-pill{margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+        .lbar{width:100%;height:2px;border-radius:999px;background:var(--border);overflow:hidden;}
+        .lbar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--teal),var(--purple));border-radius:999px;animation:lbmove 2.2s ease-in-out infinite;}
+        @keyframes lbmove{0%{width:0%;margin-left:0%;}50%{width:65%;margin-left:18%;}100%{width:0%;margin-left:100%;}}
+        .ltext{font-size:12.5px;color:var(--muted);}
+        .ltext span{color:var(--gold);font-weight:600;}
+        .ebox{margin-top:14px;padding:14px 18px;border-radius:12px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.18);color:#fca5a5;font-size:13.5px;line-height:1.55;}
+
+        .res-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding-bottom:22px;border-bottom:1px solid var(--border);}
+        .res-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);animation:ebpulse 2s infinite;}
+        .res-label{font-size:13px;color:var(--muted);}
+        .res-label b{color:var(--text);}
+        .res-chip{margin-left:auto;padding:3px 12px;border-radius:999px;background:rgba(52,212,190,0.1);border:1px solid rgba(52,212,190,0.2);color:var(--teal);font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+
+        .why{opacity:0;transform:translateY(18px);transition:opacity 0.9s cubic-bezier(.16,1,.3,1) 0.25s,transform 0.9s cubic-bezier(.16,1,.3,1) 0.25s;}
+        .why.in{opacity:1;transform:translateY(0);}
+        .why-title{text-align:center;margin-bottom:36px;font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:rgba(237,236,234,0.5);letter-spacing:-0.5px;}
+        .why-title span{color:var(--text);}
+        .fcards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+        .fc{padding:26px 20px;border-radius:17px;border:1px solid var(--border);background:var(--surface);text-align:center;transition:all 0.3s ease;cursor:default;position:relative;overflow:hidden;}
+        .fc::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);}
+        .fc:hover{border-color:var(--bhi);background:var(--s2);transform:translateY(-5px);box-shadow:0 20px 48px rgba(0,0,0,0.35);}
+        .fc-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;transition:transform 0.3s;}
+        .fc:hover .fc-icon{transform:scale(1.1) rotate(-4deg);}
+        .fc-t{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:7px;}
+        .fc-d{font-size:12px;color:var(--muted);line-height:1.65;}
+
+        .ftr{border-top:1px solid var(--border);text-align:center;padding:24px;font-size:11.5px;color:var(--dim);letter-spacing:0.3px;}
+        ::-webkit-scrollbar{width:5px;}
+        ::-webkit-scrollbar-track{background:var(--bg);}
+        ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:99px;}
+        ::-webkit-scrollbar-thumb:hover{background:var(--muted);}
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0F1E] via-[#0D1425] to-[#0A0F1E] text-white relative overflow-x-hidden">
-        
-        {/* Animated Background Elements */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 -left-4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 -right-4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/5 rounded-full blur-3xl"></div>
-          
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 opacity-20" 
-               style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
-        </div>
+      <div className="wrap">
+        <div className="glow g1" /><div className="glow g2" />
 
-        {/* Floating Orbs */}
-        <div className="fixed top-20 left-10 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></div>
-        <div className="fixed bottom-20 right-10 w-2 h-2 bg-cyan-400 rounded-full animate-ping delay-300"></div>
-        <div className="fixed top-40 right-20 w-1 h-1 bg-purple-400 rounded-full animate-ping delay-700"></div>
-
-        {/* Header */}
-        <header className="relative border-b border-white/5 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 md:h-20">
-              {/* Logo */}
-              <div className="flex items-center gap-3 group">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                  <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-xl md:text-2xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                    📋
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black tracking-tight">
-                    Resume<span className="text-emerald-400">AI</span>
-                  </h1>
-                  <p className="text-[10px] md:text-xs text-slate-500 tracking-[0.2em] flex items-center gap-1">
-                    <span className="w-1 h-1 bg-emerald-400 rounded-full"></span>
-                    POWERED BY GROQ
-                  </p>
-                </div>
-              </div>
-
-              {/* Nav Tags */}
-              <div className="hidden sm:flex gap-2">
-                {["ATS Scan", "Skill Gap", "Suggestions"].map((t, i) => (
-                  <span 
-                    key={t} 
-                    className="px-3 py-1.5 text-xs font-semibold rounded-full 
-                               bg-white/5 border border-white/10 text-slate-300
-                               hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400
-                               transition-all duration-300 cursor-default animate-fadeIn"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-
-              {/* Mobile Menu Button */}
-              <button className="sm:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-emerald-500/10 transition-colors">
-                <span className="text-2xl">⚡</span>
-              </button>
+        <header className="hdr">
+          <div className="logo">
+            <div className="logo-badge">📋</div>
+            <div>
+              <div className="logo-name">Resume<em>AI</em></div>
+              <div className="logo-tag">Groq · Llama 3.3 · Free</div>
             </div>
           </div>
+          <nav className="nav">
+            {["ATS Scanner","Skill Gap","AI Feedback","100% Free"].map(t=>(
+              <div key={t} className="npill">{t}</div>
+            ))}
+          </nav>
         </header>
 
-        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
+        <main className="main">
 
-          {/* Hero Section */}
-          <div className="text-center mb-8 md:mb-12 lg:mb-16">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 mb-6 md:mb-8 animate-fadeIn">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-emerald-400 text-xs font-semibold tracking-wider">✨ AI-Powered Resume Analysis</span>
+          <div className={`hero ${mounted?"in":""}`}>
+            <div className="eyebrow">
+              <div className="eyebrow-dot"/>
+              AI-Powered Resume Intelligence
             </div>
-
-            {/* Main Title */}
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-4 md:mb-6 animate-slideUp">
-              <span className="bg-gradient-to-r from-white via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                AI Resume Analyzer
-              </span>
-            </h2>
-            
-            {/* Description */}
-            <p className="text-slate-400 text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed animate-slideUp delay-100">
-              Upload your CV — get instant ATS score, identify skill gaps, 
-              <span className="text-emerald-400"> and receive actionable feedback</span>
+            <h1 className="h-title">
+              Land Your <span className="gw">Dream Job</span><br/>
+              <span className="fw">Starting With Your CV.</span>
+            </h1>
+            <p className="h-sub">
+              Upload your resume and get a <strong>detailed ATS score</strong>,
+              identify hidden skill gaps, and receive <strong>expert-level feedback</strong> — in under 10 seconds.
             </p>
-
-            {/* Stats Bar */}
-            <div className="mt-6 md:mt-8 flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm animate-fadeIn delay-200">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span className="text-slate-400">10K+ Resumes Analyzed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse delay-300"></span>
-                <span className="text-slate-400">98% Accuracy Rate</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-700"></span>
-                <span className="text-slate-400">Free Forever</span>
-              </div>
+            <div className="stats">
+              <div className="stat"><div className="stat-n">98%</div><div className="stat-l">Accuracy</div></div>
+              <div className="stat"><div className="stat-n">&lt;10s</div><div className="stat-l">Analysis</div></div>
+              <div className="stat"><div className="stat-n">Free</div><div className="stat-l">Forever</div></div>
+              <div className="stat"><div className="stat-n">AI</div><div className="stat-l">Powered</div></div>
             </div>
           </div>
 
-          {/* Main Upload Card */}
-          <div className="max-w-2xl mx-auto mb-8 md:mb-12">
-            {/* Glass Card Container */}
-            <div className="relative group">
-              {/* Animated border */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-3xl opacity-0 group-hover:opacity-100 blur transition duration-500"></div>
-              
-              {/* Content */}
-              <div className="relative bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10">
-                <UploadZone file={file} onFile={setFile} loading={loading} />
-
-                {file && !loading && (
-                  <div className="mt-6 animate-slideUp">
-                    <button
-                      onClick={handleAnalyze}
-                      className="relative w-full group/btn overflow-hidden"
-                    >
-                      {/* Button background with animation */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl"></div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl blur-lg opacity-50 group-hover/btn:opacity-75 transition-opacity"></div>
-                      
-                      {/* Button content */}
-                      <div className="relative px-6 py-4 rounded-xl font-black text-base text-slate-900
-                                    transform transition-all duration-300
-                                    group-hover/btn:scale-[0.98]">
-                        <span className="flex items-center justify-center gap-3">
-                          <span className="text-2xl group-hover/btn:rotate-12 transition-transform">⚡</span>
-                          <span>Analyze My Resume Now</span>
-                          <span className="text-xl group-hover/btn:translate-x-1 transition-transform">→</span>
-                        </span>
-                      </div>
-                    </button>
-
-                    {/* Hint text */}
-                    <p className="text-center text-xs text-slate-500 mt-3 animate-pulse">
-                      ✨ Groq will analyze your resume 
-                    </p>
-                  </div>
-                )}
-
-                {loading && (
-                  <div className="mt-6 text-center animate-fadeIn">
-                    <div className="inline-flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="relative">
-                        <div className="w-5 h-5 border-2 border-emerald-400/20 border-t-emerald-400 rounded-full animate-spin"></div>
-                        <div className="absolute inset-0 w-5 h-5 border-2 border-cyan-400/20 border-b-cyan-400 rounded-full animate-spin-slow"></div>
-                      </div>
-                      <span className="text-emerald-400 font-semibold">
-                        GROQ AI is analyzing your resume...
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 animate-shake">
-                    <div className="flex items-center gap-3 text-red-300 text-sm">
-                      <span className="text-xl">⚠️</span>
-                      <span>{error}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+          <div className={`ucard-wrap ${mounted?"in":""}`}>
+            <div className="ucard">
+              <UploadZone file={file} onFile={handleFile} loading={loading}/>
+              {file && !loading && (
+                <button className="abtn" onClick={handleAnalyze}>
+                  ⚡ &nbsp;Analyze My Resume
+                </button>
+              )}
+              {loading && (
+                <div className="loading-pill">
+                  <div className="lbar"><div className="lbar-fill"/></div>
+                  <div className="ltext"><span>Llama 3.3</span> is analyzing your resume…</div>
+                </div>
+              )}
+              {error && <div className="ebox">⚠️ &nbsp;{error}</div>}
             </div>
           </div>
 
-          {/* Results Section */}
           {result && (
-            <div className="mb-8 md:mb-12 animate-scaleIn">
-              <ResultsPanel data={result} filename={file?.name} />
+            <div>
+              <div className="res-header">
+                <div className="res-dot"/>
+                <div className="res-label">Analysis complete for <b>{file?.name}</b></div>
+                <div className="res-chip">✓ Done</div>
+              </div>
+              <ResultsPanel data={result}/>
             </div>
           )}
 
-          {/* Feature Cards Grid */}
           {!result && !loading && (
-            <div className="mt-8 md:mt-12 lg:mt-16">
-              <h3 className="text-center text-2xl md:text-3xl font-bold mb-8 md:mb-12 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent animate-fadeIn">
-                Why Choose ResumeAI?
-              </h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className={`why ${mounted?"in":""}`}>
+              <div className="why-title">Why choose <span>ResumeAI</span>?</div>
+              <div className="fcards">
                 {[
-                  { 
-                    icon: "🎯", 
-                    title: "ATS Score", 
-                    desc: "See how your resume performs against tracking systems",
-                    gradient: "from-emerald-400/20 to-emerald-400/5",
-                    border: "hover:border-emerald-500/50"
-                  },
-                  { 
-                    icon: "🔍", 
-                    title: "Skill Gap", 
-                    desc: "Discover what skills you're missing for target roles",
-                    gradient: "from-cyan-400/20 to-cyan-400/5",
-                    border: "hover:border-cyan-500/50"
-                  },
-                  { 
-                    icon: "📈", 
-                    title: "Improvement Tips", 
-                    desc: "Get specific, actionable fixes for every weakness",
-                    gradient: "from-purple-400/20 to-purple-400/5",
-                    border: "hover:border-purple-500/50"
-                  },
-                  { 
-                    icon: "⚡", 
-                    title: "Instant & Free", 
-                    desc: "Powered by GROQ — completely free to use",
-                    gradient: "from-amber-400/20 to-amber-400/5",
-                    border: "hover:border-amber-500/50"
-                  },
-                ].map((f, i) => (
-                  <div
-                    key={f.title}
-                    className="group relative animate-slideUp"
-                    style={{ animationDelay: `${i * 100}ms` }}
-                  >
-                    {/* Card glow effect */}
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-20 blur transition duration-500"></div>
-                    
-                    {/* Card content */}
-                    <div className={`
-                      relative bg-gradient-to-br ${f.gradient} 
-                      border border-white/5 rounded-2xl p-6 
-                      hover:border-white/20 hover:shadow-2xl 
-                      transition-all duration-300 backdrop-blur-sm
-                      ${f.border}
-                    `}>
-                      {/* Icon with animation */}
-                      <div className="relative mb-4">
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-cyan-400/20 rounded-xl blur-xl group-hover:blur-2xl transition-all"></div>
-                        <div className="relative text-4xl md:text-5xl transform group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 animate-float">
-                          {f.icon}
-                        </div>
-                      </div>
-                      
-                      <h4 className="font-bold text-lg text-white mb-2 group-hover:text-emerald-400 transition-colors">
-                        {f.title}
-                      </h4>
-                      
-                      <p className="text-sm text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
-                        {f.desc}
-                      </p>
-
-                      {/* Hover indicator */}
-                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-emerald-400">→</span>
-                      </div>
-                    </div>
+                  {icon:"🎯",color:"#d4a84b",bg:"rgba(212,168,75,0.1)", title:"ATS Score",       desc:"Know exactly how recruiters' systems rate your resume before applying."},
+                  {icon:"🔍",color:"#34d4be",bg:"rgba(52,212,190,0.1)", title:"Skill Gap",       desc:"Uncover the missing skills that are silently costing you interviews."},
+                  {icon:"🚀",color:"#9f85f7",bg:"rgba(159,133,247,0.1)",title:"Expert Feedback", desc:"Actionable, specific improvements suggested by a seasoned HR AI."},
+                  {icon:"⚡",color:"#fbbf24",bg:"rgba(251,191,36,0.1)", title:"Instant & Free",  desc:"Full analysis in under 10 seconds — no signup, no credit card."},
+                ].map(f=>(
+                  <div key={f.title} className="fc">
+                    <div className="fc-icon" style={{background:f.bg,color:f.color}}>{f.icon}</div>
+                    <div className="fc-t">{f.title}</div>
+                    <div className="fc-d">{f.desc}</div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Trust Badge */}
-          {!result && !loading && (
-            <div className="mt-12 text-center animate-fadeIn delay-500">
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-emerald-500/5 hover:border-emerald-500/20 transition-all duration-300">
-                <span className="flex -space-x-2">
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center justify-center text-xs animate-pulse-glow">✓</span>
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-400 to-blue-400 flex items-center justify-center text-xs animate-pulse-glow delay-300">✓</span>
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 flex items-center justify-center text-xs animate-pulse-glow delay-700">✓</span>
-                </span>
-                <span className="text-sm text-slate-400">
-                  Trusted by <span className="text-white font-bold">1,000+</span> job seekers
-                </span>
               </div>
             </div>
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="relative border-t border-white/5 bg-black/20 backdrop-blur-sm mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-center text-xs text-slate-600">
-              © 2026 ResumeAI • Powered by GROQ • 100% Free • No signup required
-            </p>
-          </div>
+        <footer className="ftr">
+          © 2025 ResumeAI &nbsp;·&nbsp; Powered by Groq &amp; Llama 3.3 &nbsp;·&nbsp; 100% Free &nbsp;·&nbsp; No signup required
         </footer>
       </div>
     </>
