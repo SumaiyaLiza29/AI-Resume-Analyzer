@@ -64,7 +64,7 @@ export default function UploadZone({ file, onFile, loading }) {
             Analyzing Resume...
           </p>
           <p className="text-slate-400 text-sm mt-1 max-w-xs">
-            Gemini AI is carefully reading your document
+            GROQ AI is carefully reading your document
           </p>
           <div className="mt-4 h-1.5 w-32 bg-slate-700 rounded-full overflow-hidden">
             <div className="h-full w-1/3 bg-gradient-to-r from-emerald-400 to-cyan-400 animate-pulse rounded-full"></div>

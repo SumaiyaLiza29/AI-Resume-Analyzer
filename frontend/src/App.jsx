@@ -134,7 +134,7 @@ export default function App() {
                   </h1>
                   <p className="text-[10px] md:text-xs text-slate-500 tracking-[0.2em] flex items-center gap-1">
                     <span className="w-1 h-1 bg-emerald-400 rounded-full"></span>
-                    POWERED BY GEMINI
+                    POWERED BY GROQ
                   </p>
                 </div>
               </div>
